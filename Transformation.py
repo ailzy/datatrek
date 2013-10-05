@@ -50,27 +50,21 @@ class Relabel(BaseEstimator, TransformerMixin):
                 except KeyError:
                     newX[i,j] = 0
         return newX 
-    def transform_sparse(self, X):
-        X = check_arrays(X, sparse_format='dense')[0]
+    def get_sparse_from_dense(self, X):
         m, n = X.shape
         n_values = np.array([len(d) for d in self.map_])
         start = n_values.cumsum()
         start = np.hstack((0, start))
         ncol = start[-1]
-        row_indices = []
-        col_indices = []
-        for j in xrange(n):
-            for i in xrange(m):
-                try:
-                    label = self.map_[j][X[i,j]]
-                    row_indices.append(i)
-                    col_indices.append(start[j]+label-1)
-                except KeyError:
-                    pass
-        nnz = len(row_indices)
-        data = np.ones(nnz)
-        ret = sp.csr_matrix((data, (row_indices, col_indices)), shape=(m, ncol))
-        return ret
+        row_indices = np.repeat(np.arange(m, dtype=np.int32), n)
+        col_indices = (X+start[:-1]-1).ravel()
+        mask = np.where(X.ravel() > 0)[0]
+        row_indices = row_indices[mask]
+        col_indices = col_indices[mask]
+        data = np.ones(len(mask))
+        return sp.csr_matrix((data, (row_indices, col_indices)), shape=(m, start[-1]))
+    def transform_sparse(self, X):
+        return self.get_sparse_from_dense(self.transform_dense(X))
     def fit_transform(self, X, y=None):
         self.fit(X, y)
         return self.transform(X)
