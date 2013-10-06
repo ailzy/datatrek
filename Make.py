@@ -1,5 +1,6 @@
 import os
 import cPickle as pickle
+import time
 __all__ = ['Node', 'RootNode', 'PickleNode']
 class Node(object):
     '''
@@ -42,7 +43,8 @@ class RootNode(Node):
             if not os.path.exists(f):
                 raise RuntimeError('root node target %s not exist' % f)
 class PickleNode(Node):
-    def __init__(self, f, dependencies):
+    def __init__(self, name, f, dependencies):
+        self.name = name
         self.file = f
         self.target_files = [f]
         self.dependencies = dependencies
@@ -52,5 +54,9 @@ class PickleNode(Node):
         '''
         raise NotImplementedError('compute function is not implemented')
     def update(self):
+        print("Update %s" % self.name)
+        start_time = time.time()
         self.compute()
         pickle.dump(self, open(self.target_files[0], 'wb'), pickle.HIGHEST_PROTOCOL)
+        end_time = time.time()
+        print("Elapsed time was %g seconds" % (end_time - start_time))
