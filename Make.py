@@ -42,6 +42,12 @@ class RootNode(Node):
         for f in self.target_files:
             if not os.path.exists(f):
                 raise RuntimeError('root node target %s not exist' % f)
+class PhonyNode(Node):
+    def __init__(self, dependencies):
+        self.dependencies = dependencies
+        self.target_files = []
+    def update(self):
+        pass
 class PickleNode(Node):
     def __init__(self, name, f, dependencies):
         self.name = name
