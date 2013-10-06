@@ -43,6 +43,7 @@ class RootNode(Node):
                 raise RuntimeError('root node target %s not exist' % f)
 class PickleNode(Node):
     def __init__(self, f, dependencies):
+        self.file = f
         self.target_files = [f]
         self.dependencies = dependencies
     def compute(self):
