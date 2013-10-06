@@ -14,6 +14,10 @@ class Relabel(BaseEstimator, TransformerMixin):
     def __init__(self, threshold=0, sparse=False):
         self.threshold = threshold
         self.sparse = sparse
+    @staticmethod
+    def _encode(x):
+        x.sort()
+        return dict((k,i+1) for i,k in enumerate(x))
     def fit(self, X, y=None):
         '''
         X is an array of shape [n_samples, n_features]
@@ -25,9 +29,24 @@ class Relabel(BaseEstimator, TransformerMixin):
         for j in xrange(n):
             counter = Counter(X[:,j])
             keys = [k for k, c in counter.iteritems() if c > self.threshold]
-            keys.sort()
-            local_map = dict((k,i+1) for i,k in enumerate(keys))
-            self.map_.append(local_map)
+            self.map_.append(self._encode(keys))
+        return self
+    def intersection(self, X, y=None):
+        '''
+        remove features not present in X
+        '''
+        if not hasattr(self, 'map_'):
+            self.fit(X)
+            return
+        X = check_arrays(X, sparse_format='dense')[0]
+        m, n = X.shape
+        if n != len(self.map_):
+            raise ValueError('new data with %d features, expected %d' % (n, len(self.map_)))
+        for j in xrange(n):
+            new_keys = set(X[:,j])
+            old_keys = set(self.map_[j])
+            keys = list(old_keys.intersection(new_keys))
+            self.map_[j] = self._encode(keys)
         return self
     def transform(self, X):
         '''
