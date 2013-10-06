@@ -63,6 +63,7 @@ class PickleNode(Node):
         print("Update %s" % self.name)
         start_time = time.time()
         self.compute()
-        pickle.dump(self, open(self.target_files[0], 'wb'), pickle.HIGHEST_PROTOCOL)
         end_time = time.time()
-        print("Elapsed time was %g seconds" % (end_time - start_time))
+        self.time_used = end_time - start_time
+        print("Elapsed time was %g seconds" % self.time_used)
+        pickle.dump(self, open(self.target_files[0], 'wb'), pickle.HIGHEST_PROTOCOL)
