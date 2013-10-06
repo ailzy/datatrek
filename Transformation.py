@@ -88,13 +88,14 @@ class Relabel(BaseEstimator, TransformerMixin):
         self.fit(X, y)
         return self.transform(X)
             
-class Interaction(BaseEstimator, TransformerMixin):
+class Interaction(Relabel, BaseEstimator, TransformerMixin):
     '''
     Get interaction features from nominal features
     '''
-    def __init__(self, degree=2, threshold=0):
+    def __init__(self, degree=2, threshold=0, sparse=False):
         self.degree = degree
         self.threshold = threshold
+        self.sparse = sparse
     def fit(self, X, y=None):
         '''
         Parameters
@@ -106,26 +107,36 @@ class Interaction(BaseEstimator, TransformerMixin):
         -------
         dense matrix of shape [n_samples, nchoosek(n_features, self.degree)]
         '''
-        X = check_arrays(X, sparse_format='dense', dtype=np.int)[0]
+        X = check_arrays(X, sparse_format='dense')[0]
         m, n = X.shape
         self.map_ = []
         for i, indices in enumerate(combinations(range(n), self.degree)):
-            counter = Counter()
-            for v in X[:, indices]:
-                counter[tuple(v)] += 1
-            local_map = {}
-            new_label = 1
-            for v in counter.keys():
-                if counter[v] > self.threshold:
-                    local_map[v] = new_label
-                    new_label += 1
-            self.map_.append(local_map)
+            counter = Counter(tuple(k) for k in X[:,indices])
+            keys = [k for k, c in counter.iteritems() if c > self.threshold]
+            self.map_.append(self._encode(keys))
         return self
-    def transform(self, X):
+    def intersection(self, X, y=None):
+        '''
+        remove features not present in X
+        '''
+        if not hasattr(self, 'map_'):
+            self.fit(X)
+            return
+        X = check_arrays(X, sparse_format='dense')[0]
+        m, n = X.shape
+        if comb(n, self.degree, exact=1) != len(self.map_):
+            raise ValueError('new data has different number of features')
+        for j, indices in enumerate(combinations(range(n), self.degree)):
+            new_keys = set(tuple(k) for k in X[:,indices])
+            old_keys = set(self.map_[j])
+            keys = list(old_keys.intersection(new_keys))
+            self.map_[j] = self._encode(keys)
+        return self
+    def transform_dense(self, X):
         '''
         if new feature is labeled 0, then it is unknown
         '''
-        X = check_arrays(X, sparse_format='dense', dtype=np.int)[0]
+        X = check_arrays(X, sparse_format='dense')[0]
         m, n = X.shape
         ret = np.empty((m,comb(n, self.degree, exact=1)))
         for j, indices in enumerate(combinations(range(n), self.degree)):
