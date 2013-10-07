@@ -26,6 +26,6 @@ def cross_val_predict(estimator, X, y, cv=5, n_jobs=1, refit=False, predict_fun=
     ## pred[index] = pred doesn't work as expected
     pred[index] = pred.copy()
     if refit:
-        return pred, estimator.fit(X,y)
+        return pred, clone(estimator).fit(X,y)
     else:
         return pred

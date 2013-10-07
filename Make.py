@@ -1,6 +1,7 @@
 import os
 import cPickle as pickle
 import time
+import copy
 __all__ = ['Node', 'RootNode', 'PickleNode']
 class Node(object):
     '''
@@ -71,6 +72,18 @@ class PickleNode(Node):
         self.file = f
         self.target_files = [f]
         self.dependencies = dependencies
+        self.make_attributes_ = self.__dict__.keys()
+        self.make_attributes_.append('make_attributes_')
+    def __getstate__(self):
+        odict = self.__dict__.copy()
+        D = odict['dependencies']
+        for i in xrange(len(D)):
+            if isinstance(D[i], PickleNode):
+                D[i] = copy.copy(D[i])
+                for k in D[i].__dict__.keys():
+                    if k not in D[i].make_attributes_:
+                        del D[i].__dict__[k]
+        return odict
     def compute(self):
         '''
         do computation and store result in self
