@@ -20,15 +20,16 @@ class Node(object):
         '''
         for parent in self.dependencies:
             parent.make()
+        dependency_files = [f for d in self.dependencies for f in d.target_files]
         # NOTE
-        if len(self.dependencies)==0 or len(self.target_files)==0:
+        if len(dependency_files)==0 or len(self.target_files)==0:
             self.update()
             return
         if not all([os.path.exists(f) for f in self.target_files]):
             self.update()
             return
         min_target_time = min(os.path.getmtime(f) for f in self.target_files)
-        max_dependency_time = max(os.path.getmtime(f) for d in self.dependencies for f in d.target_files)
+        max_dependency_time = max(os.path.getmtime(f) for f in dependency_files)
         if min_target_time < max_dependency_time:
             self.update()
     def __str__(self):
@@ -48,6 +49,22 @@ class PhonyNode(Node):
         self.target_files = []
     def update(self):
         pass
+class VirtualNode(Node):
+    '''
+    Usage:
+    1. combine all dependencies target to one
+    2. add new action
+    update do nothing
+    '''
+    def __init__(self, dependencies):
+        self.dependencies = dependencies
+        self.target_files = [f for d in dependencies for f in d.target_files]
+    def make(self):
+        '''Just transfer to parents'''
+        for parent in self.dependencies:
+            parent.make()
+    def update(self):
+        raise RuntimeError('this method should never be called')
 class PickleNode(Node):
     def __init__(self, name, f, dependencies):
         self.name = name
