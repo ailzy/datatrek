@@ -124,3 +124,12 @@ def get_node_map(nodes):
         if isinstance(node, PickleNode):
             map[node.name] = node
     return map
+
+'''
+TODO
+Node.make works perfectly if in each update, data in dependencies are load from disk.
+However if a parent is PickleNode, the data may alreadly in memory.
+But when data is large, we want to utilize memory intelligently:
+load data once, and unload it when no longer needed.
+Thus arises a need for a planner for make
+'''
