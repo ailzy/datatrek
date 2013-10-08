@@ -74,16 +74,6 @@ class PickleNode(Node):
         self.dependencies = dependencies
         self.make_attributes_ = self.__dict__.keys()
         self.make_attributes_.append('make_attributes_')
-    def __getstate__(self):
-        odict = self.__dict__.copy()
-        D = odict['dependencies']
-        for i in xrange(len(D)):
-            if isinstance(D[i], PickleNode):
-                D[i] = copy.copy(D[i])
-                for k in D[i].__dict__.keys():
-                    if k not in D[i].make_attributes_:
-                        del D[i].__dict__[k]
-        return odict
     def compute(self):
         '''
         do computation and store result in self
@@ -96,4 +86,26 @@ class PickleNode(Node):
         end_time = time.time()
         self.time_used = end_time - start_time
         print("Elapsed time was %g seconds" % self.time_used)
-        pickle.dump(self, open(self.target_files[0], 'wb'), pickle.HIGHEST_PROTOCOL)
+        self.save_data_()
+    def save_data_(self):
+        # We dump data to pickle file
+        # The dependency infos should be recovered in py files
+        odict = self.__dict__.copy()
+        for k in odict.keys():
+            if k in self.make_attributes_:
+                del odict[k]
+        pickle.dump(odict, open(self.file, 'wb'), pickle.HIGHEST_PROTOCOL)
+    def load_data_(self):
+        'load saved data of node to memory'
+        self.__dict__.update(pickle.load(open(self.file)))
+    def unload_data__(self):
+        'Remove attributes other than those needed to make'
+        odict = self.__dict__
+        for k in odict.keys():
+            if k not in self.make_attributes_:
+                del odict[k]
+    def get_data(self, *args, **kargs):
+        self.load_data_()
+        return self.decorate_data(*args, **kargs)
+    def decorate_data(self, *args, **kargs):
+        raise NotImplementedError('decorate_data is not implemented')
