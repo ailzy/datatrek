@@ -72,6 +72,7 @@ class PickleNode(Node):
         self.file = f
         self.target_files = [f]
         self.dependencies = dependencies
+        self.loaded_ = False
         self.make_attributes_ = self.__dict__.keys()
         self.make_attributes_.append('make_attributes_')
     def compute(self):
@@ -83,6 +84,7 @@ class PickleNode(Node):
         print("Update %s" % self.name)
         start_time = time.time()
         self.compute()
+        self.loaded_ = True
         end_time = time.time()
         self.time_used = end_time - start_time
         print("Elapsed time was %g seconds" % self.time_used)
@@ -90,6 +92,8 @@ class PickleNode(Node):
     def save_data_(self):
         # We dump data to pickle file
         # The dependency infos should be recovered in py files
+        if not self.loaded_:
+            raise RuntimeError('try to save data when data not loaded')
         odict = self.__dict__.copy()
         for k in odict.keys():
             if k in self.make_attributes_:
@@ -97,15 +101,26 @@ class PickleNode(Node):
         pickle.dump(odict, open(self.file, 'wb'), pickle.HIGHEST_PROTOCOL)
     def load_data_(self):
         'load saved data of node to memory'
-        self.__dict__.update(pickle.load(open(self.file)))
-    def unload_data__(self):
+        if not self.loaded_:
+            self.__dict__.update(pickle.load(open(self.file)))
+            self.loaded_ = True
+    def unload_data_(self):
         'Remove attributes other than those needed to make'
+        if not self.loaded_:
+            return
         odict = self.__dict__
         for k in odict.keys():
             if k not in self.make_attributes_:
                 del odict[k]
+        self.loaded_ = False
     def get_data(self, *args, **kargs):
         self.load_data_()
         return self.decorate_data(*args, **kargs)
     def decorate_data(self, *args, **kargs):
         raise NotImplementedError('decorate_data is not implemented')
+def get_node_map(nodes):
+    map = {}
+    for node in nodes:
+        if isinstance(node, PickleNode):
+            map[node.name] = node
+    return map
