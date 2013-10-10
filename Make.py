@@ -67,9 +67,8 @@ class VirtualNode(Node):
     def update(self):
         raise RuntimeError('this method should never be called')
 class PickleNode(Node):
-    def __init__(self, name, f, dependencies):
-        self.name = name
-        self.file = f
+    def __init__(self, f, dependencies):
+        self.pickle_file = f
         self.target_files = [f]
         self.dependencies = dependencies
         self.loaded_ = False
@@ -81,7 +80,7 @@ class PickleNode(Node):
         '''
         raise NotImplementedError('compute function is not implemented')
     def update(self):
-        print("Update %s" % self.name)
+        print("Update %s" % self.pickle_file)
         start_time = time.time()
         self.compute()
         self.loaded_ = True
@@ -98,11 +97,11 @@ class PickleNode(Node):
         for k in odict.keys():
             if k in self.make_attributes_:
                 del odict[k]
-        pickle.dump(odict, open(self.file, 'wb'), pickle.HIGHEST_PROTOCOL)
+        pickle.dump(odict, open(self.pickle_file, 'wb'), pickle.HIGHEST_PROTOCOL)
     def load_data_(self):
         'load saved data of node to memory'
         if not self.loaded_:
-            self.__dict__.update(pickle.load(open(self.file)))
+            self.__dict__.update(pickle.load(open(self.pickle_file)))
             self.loaded_ = True
     def unload_data_(self):
         'Remove attributes other than those needed to make'
@@ -118,13 +117,6 @@ class PickleNode(Node):
         return self.decorate_data(*args, **kargs)
     def decorate_data(self, *args, **kargs):
         raise NotImplementedError('decorate_data is not implemented')
-def get_node_map(nodes):
-    map = {}
-    for node in nodes:
-        if isinstance(node, PickleNode):
-            map[node.name] = node
-    return map
-
 '''
 TODO
 Node.make works perfectly if in each update, data in dependencies are load from disk.
