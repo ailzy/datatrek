@@ -1,11 +1,13 @@
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_random_state, check_arrays
+from sklearn.base import BaseEstimator, TransformerMixin
 from itertools import combinations
 from collections import Counter
 import numpy as np
 import scipy.sparse as sp
 from scipy.misc import comb
-__all__ = ['Relabel' ,'Interaction']
+from scipy.stats.mstats import mquantiles
+import numpy.ma as ma
+__all__ = ['Relabel' ,'Interaction', 'Densifier', 'MissingValueFiller', 'Winsorizer']
 
 class Relabel(BaseEstimator, TransformerMixin):
     '''
@@ -149,6 +151,7 @@ class Interaction(Relabel, BaseEstimator, TransformerMixin):
     def fit_transform(self, X, y=None):
         self.fit(X, y)
         return self.transform(X)
+
 class Densifier(BaseEstimator, TransformerMixin):
     def __init__(self):
         pass
@@ -156,3 +159,48 @@ class Densifier(BaseEstimator, TransformerMixin):
         return self
     def transform(self, X):
         return X.toarray()
+
+
+class MissingValueFiller(BaseEstimator, TransformerMixin):
+    def __init__(self, v, add_missing_indicator=True):
+        self.v = v
+        self.add_missing_indicator = add_missing_indicator
+    def fit(self, X, y=None):
+            return self
+    def transform(self, X):
+        import pandas as pd
+        import numpy as np
+        X = pd.DataFrame(X).fillna(self.v).values
+        if self.add_missing_indicator:
+            X_ = pd.isnull(X)
+            return np.hstack((X,X_))
+        else:
+            return X
+class Winsorizer(BaseEstimator, TransformerMixin):
+    """
+    squeeze values in [Q1-alpha*IQR, Q3+alpha*IQR]
+    keep nan values
+    """
+    def __init__(self, alpha=5):
+        self.alpha = alpha
+    def fit(self, X, y=None):
+        """
+        expect 2-d np.ndarry
+        """
+        X_ = ma.masked_invalid(X)
+        quartiles_ = mquantiles(X_, axis=0, prob=[0.25, 0.75])
+        assert not quartiles_.mask.any()
+        quartiles_ = quartiles_.data
+        IQRs = np.diff(quartiles_,axis=0).ravel()
+        self.limits_ = quartiles_
+        self.limits_[0,:] -= self.alpha*IQRs
+        self.limits_[1,:] += self.alpha*IQRs
+        return self
+    def transform(self, X):
+        X_new = X.copy()
+        for j in range(X.shape[1]):
+            X_j =  X_new[:,j]
+            mask = np.isfinite(X_j)
+            X_j[(X_j>self.limits_[1,j]) & mask] = self.limits_[1,j]
+            X_j[(X_j<self.limits_[0,j]) & mask] = self.limits_[0,j]
+        return X_new

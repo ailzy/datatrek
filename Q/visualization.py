@@ -1,5 +1,6 @@
 import matplotlib.pylab as plt
 import numpy as np
+from .util import remove_outlier_by_IQR, remove_outlier_by_quantile, remove_outlier_by_std
 def visualize_binary_classification(y_train, pred_train, y_test, pred_test):
     """
     visualize binary classification
@@ -29,7 +30,6 @@ def visualize_regression(y_train, pred_train, y_test, pred_test):
     plt.plot(y_test,pred_test,'.')
     plt.show()
 
-from models import remove_outlier_by_IQR, remove_outlier_by_quantile, remove_outlier_by_std
 def visualize_distribution(x):
     x = x[~np.isnan(x)]
     n = len(x)
@@ -47,5 +47,4 @@ def visualize_distribution(x):
         axes[0,i].boxplot(x_new)
         axes[1,i].hist(x_new)
         axes[0,i].set_title(name+', coverage {:.2g}'.format(coverage))
-    plt.show()
     return fig

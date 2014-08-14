@@ -1,5 +1,5 @@
 import os
-import cPickle as pickle
+import pickle
 import time
 import copy
 __all__ = ['Node', 'RootNode', 'PickleNode']
