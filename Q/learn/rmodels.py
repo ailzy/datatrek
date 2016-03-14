@@ -1,10 +1,11 @@
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
-from rpy2.robjects.numpy2ri import numpy2ri
+from rpy2.robjects import default_converter
+from rpy2.robjects.numpy2ri import converter as np_converter
+robjects.conversion.set_conversion(default_converter + np_converter)
 from sklearn.base import BaseEstimator, ClassifierMixin
 import warnings
 import numpy as np
-robjects.conversion.py2ri = numpy2ri
 R = robjects.r
 
 class LogisticRegressionCV(BaseEstimator, ClassifierMixin):
