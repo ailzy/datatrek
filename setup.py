@@ -8,5 +8,6 @@ setup(
     description = "python code of luoq",
     packages = ["Q",
                 "Q.learn",
+                "Q.learn.transformation",
 		],
 )    
