@@ -66,7 +66,7 @@ class Relabel(BaseEstimator, TransformerMixin):
                 try:
                     newX[i,j] = self.map_[j][X[i,j]]
                 except KeyError:
-                    newX[i,j] = -1
+                    newX[i,j] = np.nan
         return newX 
     def get_sparse_from_dense(self, X):
         m, n = X.shape
