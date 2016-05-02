@@ -1,13 +1,13 @@
 from distutils.core import setup
 
 setup(
-    name = "Q",
+    name = "datatrek",
     version = "0.0.1",
     author = "Qiang Luo",
     author_email = "luoq08@gmail.com",
-    description = "python code of luoq",
-    packages = ["Q",
-                "Q.learn",
-                "Q.learn.transformation",
+    description = "data analysis toolkit",
+    packages = ["datatrek",
+                "datatrek.sklearn_addon",
+                "datatrek.sklearn_addon.transformation",
 		],
 )    
