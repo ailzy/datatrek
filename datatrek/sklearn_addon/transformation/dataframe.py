@@ -3,6 +3,8 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
+from sklearn.feature_extraction import DictVectorizer
+
 
 class ResponseAggregationImputer(BaseEstimator, TransformerMixin):
     def __init__(self, min_freq=100, min_freq_ratio=0.0,
@@ -65,3 +67,18 @@ class FrequencyThreshold(BaseEstimator, TransformerMixin):
         for col in self.features_:
             new_df[col + '__frequent'] = [x if x in self.classes_[col] else np.nan for x in df[col]]
         return pd.DataFrame(new_df)
+
+from ...util import df_to_clean_records
+
+class DataFrameVectorizer(DictVectorizer):
+    def fit(self, X, y=None):
+        return super(DataFrameVectorizer, self).fit(df_to_clean_records(X))
+
+    def transform(self, X, y=None):
+        return super(DataFrameVectorizer, self).transform(df_to_clean_records(X))
+
+    def fit_transform(self, X, y=None):
+        return super(DataFrameVectorizer, self).fit_transform(df_to_clean_records(X))
+
+    def inverse_transform(self, X, dict_type=dict):
+        return pd.DataFrame.from_records(super(DataFrameVectorizer, self).inverse_transform(X))
