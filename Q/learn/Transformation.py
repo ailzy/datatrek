@@ -1,4 +1,4 @@
-from sklearn.utils import check_random_state, check_arrays
+from sklearn.utils import check_random_state, check_array
 from sklearn.base import BaseEstimator, TransformerMixin
 from itertools import combinations
 from collections import Counter
@@ -7,7 +7,7 @@ import scipy.sparse as sp
 from scipy.misc import comb
 from scipy.stats.mstats import mquantiles
 import numpy.ma as ma
-__all__ = ['Relabel' ,'Interaction', 'Densifier', 'MissingValueFiller', 'Winsorizer']
+__all__ = ['Relabel' ,'Interaction', 'Densifier', 'MissingValueFiller', 'Winsorizer']      
 
 class Relabel(BaseEstimator, TransformerMixin):
     '''
@@ -19,16 +19,15 @@ class Relabel(BaseEstimator, TransformerMixin):
     @staticmethod
     def _encode(x):
         x.sort()
-        return dict((k,i+1) for i,k in enumerate(x))
+        return dict((k,i) for i,k in enumerate(x))
     def fit(self, X, y=None):
         '''
         X is an array of shape [n_samples, n_features]
 
         '''
-        X = check_arrays(X, sparse_format='dense')[0]
         m, n = X.shape
         self.map_ = []
-        for j in xrange(n):
+        for j in range(n):
             counter = Counter(X[:,j])
             keys = [k for k, c in counter.iteritems() if c > self.threshold]
             self.map_.append(self._encode(keys))
@@ -40,11 +39,10 @@ class Relabel(BaseEstimator, TransformerMixin):
         if not hasattr(self, 'map_'):
             self.fit(X)
             return
-        X = check_arrays(X, sparse_format='dense')[0]
         m, n = X.shape
         if n != len(self.map_):
             raise ValueError('new data with %d features, expected %d' % (n, len(self.map_)))
-        for j in xrange(n):
+        for j in range(n):
             new_keys = set(X[:,j])
             old_keys = set(self.map_[j])
             keys = list(old_keys.intersection(new_keys))
@@ -52,8 +50,8 @@ class Relabel(BaseEstimator, TransformerMixin):
         return self
     def transform(self, X):
         '''
-        labels learned in train set start from 1 and is continous
-        label 0 means unknown label
+        labels learned in train set start from 0 and is continous
+        label -1 means unknown label
         if sparse is true, Only labels learned from train set has a column
         '''
         if self.sparse:
@@ -61,15 +59,14 @@ class Relabel(BaseEstimator, TransformerMixin):
         else:
             return self.transform_dense(X)
     def transform_dense(self, X):
-        X = check_arrays(X, sparse_format='dense')[0]
         m, n = X.shape
         newX = np.empty((m, n), dtype=int)
-        for j in xrange(n):
-            for i in xrange(m):
+        for j in range(n):
+            for i in range(m):
                 try:
                     newX[i,j] = self.map_[j][X[i,j]]
                 except KeyError:
-                    newX[i,j] = 0
+                    newX[i,j] = -1
         return newX 
     def get_sparse_from_dense(self, X):
         m, n = X.shape
@@ -109,7 +106,7 @@ class Interaction(Relabel, BaseEstimator, TransformerMixin):
         -------
         dense matrix of shape [n_samples, nchoosek(n_features, self.degree)]
         '''
-        X = check_arrays(X, sparse_format='dense')[0]
+        X = check_array(X)[0]
         m, n = X.shape
         self.map_ = []
         for i, indices in enumerate(combinations(range(n), self.degree)):
@@ -124,7 +121,7 @@ class Interaction(Relabel, BaseEstimator, TransformerMixin):
         if not hasattr(self, 'map_'):
             self.fit(X)
             return
-        X = check_arrays(X, sparse_format='dense')[0]
+        X = check_array(X)[0]
         m, n = X.shape
         if comb(n, self.degree, exact=1) != len(self.map_):
             raise ValueError('new data has different number of features')
@@ -138,7 +135,7 @@ class Interaction(Relabel, BaseEstimator, TransformerMixin):
         '''
         if new feature is labeled 0, then it is unknown
         '''
-        X = check_arrays(X, sparse_format='dense')[0]
+        X = check_array(X)[0]
         m, n = X.shape
         ret = np.empty((m,comb(n, self.degree, exact=1)))
         for j, indices in enumerate(combinations(range(n), self.degree)):
