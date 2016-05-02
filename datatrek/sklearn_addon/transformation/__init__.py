@@ -7,7 +7,11 @@ import scipy.sparse as sp
 from scipy.misc import comb
 from scipy.stats.mstats import mquantiles
 import numpy.ma as ma
-__all__ = ['Relabel' ,'Interaction', 'Densifier', 'MissingValueFiller', 'Winsorizer']      
+from sklearn.preprocessing import LabelEncoder
+from sklearn.feature_extraction import DictVectorizer
+__all__ = ['Relabel' ,'Interaction', 'Densifier', 'MissingValueFiller', 'Winsorizer']
+
+
 
 class Relabel(BaseEstimator, TransformerMixin):
     '''
