@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
     name = "datatrek",
@@ -6,8 +6,5 @@ setup(
     author = "Qiang Luo",
     author_email = "luoq08@gmail.com",
     description = "data analysis toolkit",
-    packages = ["datatrek",
-                "datatrek.sklearn_addon",
-                "datatrek.sklearn_addon.transformation",
-		],
+    packages = find_packages()
 )    
