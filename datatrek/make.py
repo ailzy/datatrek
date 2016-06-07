@@ -1,7 +1,7 @@
 import os
 import pickle
 import time
-import copy
+
 __all__ = ['Node', 'RootNode', 'PickleNode']
 class Node(object):
     '''
@@ -100,15 +100,15 @@ class PickleNode(Node):
         # The dependency infos should be recovered in py files
         if not self.loaded_:
             raise RuntimeError('try to save data when data not loaded')
-        odict = self.__dict__.copy()
-        for k in odict.keys():
-            if k in self.make_attributes_:
-                del odict[k]
+        odict = {}
+        for k in self.__dict__.keys():
+            if k not in self.make_attributes_:
+                odict[k] = self.__dict__[k]
         pickle.dump(odict, open(self.pickle_file, 'wb'), pickle.HIGHEST_PROTOCOL)
     def load_data_(self):
         'load saved data of node to memory'
         if not self.loaded_:
-            self.__dict__.update(pickle.load(open(self.pickle_file)))
+            self.__dict__.update(pickle.load(open(self.pickle_file, 'rb')))
             self.loaded_ = True
     def unload_data_(self):
         'Remove attributes other than those needed to make'
