@@ -79,7 +79,7 @@ class PickleNode(Node):
         self.target_files = [f]
         self.dependencies = dependencies
         self.loaded_ = False
-        self.make_attributes_ = self.__dict__.keys()
+        self.make_attributes_ = list(self.__dict__.keys())
         self.make_attributes_.append('make_attributes_')
     def compute(self):
         '''
