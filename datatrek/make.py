@@ -19,10 +19,11 @@ class Node(object):
         '''
         make this node
         '''
+        # make parents
         for parent in self.dependencies:
             parent.make()
         dependency_files = [f for d in self.dependencies for f in d.target_files]
-        # NOTE
+        # NOTE special case
         if len(dependency_files)==0 or len(self.target_files)==0:
             self.update()
             return
@@ -33,10 +34,12 @@ class Node(object):
         max_dependency_time = max(os.path.getmtime(f) for f in dependency_files)
         if min_target_time < max_dependency_time:
             self.update()
+            return
     def __str__(self):
         dependency_files = [d.target_files for d in self.dependencies]
         return "targets: %s, dependencies: %s" % (self.target_files, str(dependency_files))
 class RootNode(Node):
+    '''Node for static resource, target_files should always exist'''
     def __init__(self, target_files):
         self.dependencies = []
         self.target_files = target_files
@@ -45,6 +48,7 @@ class RootNode(Node):
             if not os.path.exists(f):
                 raise RuntimeError('root node target %s not exist' % f)
 class PhonyNode(Node):
+    '''combine multi nodes together'''
     def __init__(self, dependencies):
         self.dependencies = dependencies
         self.target_files = []
@@ -67,6 +71,9 @@ class VirtualNode(Node):
     def update(self):
         raise RuntimeError('this method should never be called')
 class PickleNode(Node):
+    '''
+    Node storing self in single pickle file
+    '''
     def __init__(self, f, dependencies):
         self.pickle_file = f
         self.target_files = [f]
@@ -89,7 +96,7 @@ class PickleNode(Node):
         print("Elapsed time was %g seconds" % self.time_used)
         self.save_data_()
     def save_data_(self):
-        # We dump data to pickle file
+        # dump self to pickle file without info for make
         # The dependency infos should be recovered in py files
         if not self.loaded_:
             raise RuntimeError('try to save data when data not loaded')
@@ -116,6 +123,9 @@ class PickleNode(Node):
         self.load_data_()
         return self.decorate_data(*args, **kargs)
     def decorate_data(self, *args, **kargs):
+        '''
+        represent self for user, should only restruct self
+        '''
         raise NotImplementedError('decorate_data is not implemented')
 '''
 TODO
