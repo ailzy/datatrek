@@ -142,7 +142,7 @@ class PickleNode(Node):
         if not self.loaded_:
             return
         odict = self.__dict__
-        for k in odict.keys():
+        for k in list(odict.keys()):
             if k not in self.make_attributes_:
                 del odict[k]
         self.loaded_ = False
