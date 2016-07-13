@@ -32,13 +32,15 @@ import os
 import pickle
 def with_cache(cache_file):
     def f(g):
-        if os.path.exists(cache_file):
-            return pickle.load(open(cache_file, 'rb'))
-        else:
-            res = g()
-            pickle.dump(res, open(cache_file, 'wb'),
-                        protocol=pickle.HIGHEST_PROTOCOL)
-            return res
+        def gg(*args, **kargs):
+            if os.path.exists(cache_file):
+                return pickle.load(open(cache_file, 'rb'))
+            else:
+                res = g(*args, **kargs)
+                pickle.dump(res, open(cache_file, 'wb'),
+                            protocol=pickle.HIGHEST_PROTOCOL)
+                return res
+        return gg
     return f
 
 
