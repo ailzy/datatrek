@@ -1,11 +1,13 @@
 from sklearn.naive_bayes import MultinomialNB
 import numpy as np
 
+__all__ = ['MultinomialNB2']
+
 class MultinomialNB2(MultinomialNB):
     """
     smoothing factor for a class is alpha*raw_event_count
     """
-    def _update_class_log_prior(self):
+    def _update_feature_log_prob(self):
         """Apply smoothing to raw counts and recompute log probabilities"""
         smoothed_fc = self.feature_count_ + self.alpha*self.class_count_[:, np.newaxis]
         smoothed_cc = smoothed_fc.sum(axis=1)
