@@ -60,3 +60,17 @@ class DataFrameNDArrayWrapper:
         i = self.row_name_to_loc[row_name]
         row = self.d[i]
         return OrderedDict(zip(self.column_names, row))
+
+def auto_convert_dataframe_for_ndarray_function(f):
+    def g(X, *args, **kwargs):
+        need_convert = isinstance(X, pd.DataFrame)
+        if need_convert:
+            X_ = X.values
+        else:
+            X_ = X
+        Y = f(X_, *args, **kwargs)
+        if need_convert:
+            return pd.DataFrame(Y, index=X.index, columns=X.columns)
+        else:
+            return Y
+    return g
