@@ -1,14 +1,15 @@
-from sklearn.utils import check_random_state, check_array
-from sklearn.base import BaseEstimator, TransformerMixin
-from itertools import combinations
 from collections import Counter
+from itertools import combinations
+
 import numpy as np
+import numpy.ma as ma
 import scipy.sparse as sp
 from scipy.misc import comb
 from scipy.stats.mstats import mquantiles
-import numpy.ma as ma
-from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_extraction import DictVectorizer
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils import check_array
+from sklearn.preprocessing import OneHotEncoder
+
 __all__ = ['Relabel' ,'Interaction', 'Densifier', 'MissingValueFiller', 'Winsorizer']
 
 
@@ -205,3 +206,26 @@ class Winsorizer(BaseEstimator, TransformerMixin):
             X_j[(X_j>self.limits_[1,j]) & mask] = self.limits_[1,j]
             X_j[(X_j<self.limits_[0,j]) & mask] = self.limits_[0,j]
         return X_new
+
+
+class QuantileDiscretizer(BaseEstimator, TransformerMixin):
+    def __init__(self, nq=10, sparse=True):
+        self.nq = nq
+        self.sparse = sparse
+
+    def fit(self, X, y=None):
+        self.qs_ = np.nanpercentile(X, q=100*np.arange(1,self.nq)/self.nq, axis=0)
+        return self
+
+    def transform(self, X, y=None):
+        Q = np.empty_like(X) * np.nan
+        for i in range(self.qs_.shape[0]):
+            q = self.qs_[i:i+1]
+            if i == 0:
+                Q[X < q] = i
+            Q[X>=q] = i + 1
+        if self.sparse:
+            one_hot_encoder = OneHotEncoder(n_values=self.nq, sparse=True)
+            return one_hot_encoder.fit_transform(Q)
+        else:
+            return Q
