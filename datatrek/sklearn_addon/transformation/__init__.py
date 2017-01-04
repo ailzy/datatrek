@@ -207,6 +207,35 @@ class Winsorizer(BaseEstimator, TransformerMixin):
             X_j[(X_j<self.limits_[0,j]) & mask] = self.limits_[0,j]
         return X_new
 
+def _onehot_encoding(X, n_values):
+    """
+    memory efficient onehot encoding
+    :param X:
+    :return:
+    """
+    nrow, ncol = X.shape
+
+    # offsets for each column
+    offsets = np.empty(ncol, dtype=np.int)
+    offsets.fill(n_values)
+    offsets[0] = 0
+    np.cumsum(offsets, out=offsets)
+
+    # build column indices
+    np.add(X, offsets[np.newaxis, :], out=X)
+    column_indices = X.ravel()
+
+    # build data
+    data = np.ones(X.size)
+
+    # build row indptr
+    indptr = np.empty(nrow + 1, dtype=np.int)
+    indptr.fill(ncol)
+    indptr[0] = 0
+    np.cumsum(indptr, out=indptr)
+
+    return sp.csr_matrix((data, column_indices, indptr), shape=(nrow, ncol*n_values))
+
 
 class QuantileDiscretizer(BaseEstimator, TransformerMixin):
     def __init__(self, nq=10, sparse=True):
@@ -225,7 +254,6 @@ class QuantileDiscretizer(BaseEstimator, TransformerMixin):
                 Q[X < q] = i
             Q[X>=q] = i + 1
         if self.sparse:
-            one_hot_encoder = OneHotEncoder(n_values=self.nq, sparse=True)
-            return one_hot_encoder.fit_transform(Q)
+            return _onehot_encoding(Q, self.nq)
         else:
             return Q
