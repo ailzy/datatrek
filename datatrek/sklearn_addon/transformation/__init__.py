@@ -213,6 +213,10 @@ def _onehot_encoding(X, n_values):
     :param X:
     :return:
     """
+
+    if np.any(X<0):
+        raise RuntimeError('all value of X must > 0')
+
     nrow, ncol = X.shape
 
     # offsets for each column
@@ -226,7 +230,7 @@ def _onehot_encoding(X, n_values):
     column_indices = X.ravel()
 
     # build data
-    data = np.ones(X.size)
+    data = np.ones(X.size, dtype=np.int)
 
     # build row indptr
     indptr = np.empty(nrow + 1, dtype=np.int)
@@ -247,7 +251,8 @@ class QuantileDiscretizer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        Q = np.empty_like(X) * np.nan
+        Q = np.empty_like(X, dtype=np.int)
+        Q.fill(-1)
         for i in range(self.qs_.shape[0]):
             q = self.qs_[i:i+1]
             if i == 0:
