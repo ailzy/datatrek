@@ -8,7 +8,7 @@ from scipy.misc import comb
 from scipy.stats.mstats import mquantiles
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_array
-from sklearn.preprocessing import OneHotEncoder
+import numbers
 
 __all__ = ['Relabel' ,'Interaction', 'Densifier', 'MissingValueFiller', 'Winsorizer']
 
@@ -220,13 +220,17 @@ def _onehot_encoding(X, n_values):
     nrow, ncol = X.shape
 
     # offsets for each column
-    offsets = np.empty(ncol, dtype=np.int)
-    offsets.fill(n_values)
-    offsets[0] = 0
+    if isinstance(n_values, numbers.Integral):
+        offsets = np.empty(ncol+1, dtype=np.int)
+        offsets.fill(n_values)
+        offsets[0] = 0
+    else:
+        offsets = np.concatenate(([0], n_values))
+
     np.cumsum(offsets, out=offsets)
 
     # build column indices
-    np.add(X, offsets[np.newaxis, :], out=X)
+    np.add(X, offsets[np.newaxis, :-1], out=X)
     column_indices = X.ravel()
 
     # build data
@@ -238,7 +242,7 @@ def _onehot_encoding(X, n_values):
     indptr[0] = 0
     np.cumsum(indptr, out=indptr)
 
-    return sp.csr_matrix((data, column_indices, indptr), shape=(nrow, ncol*n_values))
+    return sp.csr_matrix((data, column_indices, indptr), shape=(nrow, offsets[-1]))
 
 
 class QuantileDiscretizer(BaseEstimator, TransformerMixin):
