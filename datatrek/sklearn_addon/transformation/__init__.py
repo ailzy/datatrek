@@ -34,7 +34,7 @@ class Relabel(BaseEstimator, TransformerMixin):
         self.map_ = []
         for j in range(n):
             counter = Counter(X[:,j])
-            keys = [k for k, c in counter.iteritems() if c > self.threshold]
+            keys = [k for k, c in counter.items() if c > self.threshold]
             self.map_.append(self._encode(keys))
         return self
     def intersection(self, X, y=None):
@@ -111,12 +111,12 @@ class Interaction(Relabel, BaseEstimator, TransformerMixin):
         -------
         dense matrix of shape [n_samples, nchoosek(n_features, self.degree)]
         '''
-        X = check_array(X)[0]
+        X = check_array(X)
         m, n = X.shape
         self.map_ = []
         for i, indices in enumerate(combinations(range(n), self.degree)):
             counter = Counter(tuple(k) for k in X[:,indices])
-            keys = [k for k, c in counter.iteritems() if c > self.threshold]
+            keys = [k for k, c in counter.items() if c > self.threshold]
             self.map_.append(self._encode(keys))
         return self
     def intersection(self, X, y=None):
@@ -126,7 +126,7 @@ class Interaction(Relabel, BaseEstimator, TransformerMixin):
         if not hasattr(self, 'map_'):
             self.fit(X)
             return
-        X = check_array(X)[0]
+        X = check_array(X)
         m, n = X.shape
         if comb(n, self.degree, exact=1) != len(self.map_):
             raise ValueError('new data has different number of features')
@@ -140,7 +140,7 @@ class Interaction(Relabel, BaseEstimator, TransformerMixin):
         '''
         if new feature is labeled 0, then it is unknown
         '''
-        X = check_array(X)[0]
+        X = check_array(X)
         m, n = X.shape
         ret = np.empty((m,comb(n, self.degree, exact=1)))
         for j, indices in enumerate(combinations(range(n), self.degree)):
