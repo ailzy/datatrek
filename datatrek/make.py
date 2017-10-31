@@ -11,18 +11,23 @@ class Node(object):
     '''
 
     def __init__(self, target_files=[], dependencies=[]):
+        """
+
+        :param target_files: list of files; whose existence and modification time represent the status of this node
+        :param dependencies: list of Node
+        """
         self.dependencies = dependencies
         self.target_files = target_files
 
     def update(self):
         '''
-        The update function to make target_files for dependencies
+        The action to make target_files from dependencies
         '''
         raise NotImplementedError('update function is not implemented')
 
     def make(self):
         '''
-        make this node
+        execute the graph up to this node
         '''
         # make parents
         for parent in self.dependencies:
@@ -73,7 +78,7 @@ class PhonyNode(Node):
 class VirtualNode(Node):
     '''
     Usage:
-    1. combine all dependencies target to one
+    1. combine all dependencies to one
     2. add new action
     update do nothing
     '''
