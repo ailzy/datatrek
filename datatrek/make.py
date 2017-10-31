@@ -33,22 +33,20 @@ class Node(object):
         for parent in self.dependencies:
             parent.make()
         dependency_files = [f for d in self.dependencies for f in d.target_files]
-        # NOTE special case
-        if len(dependency_files) == 0 or len(self.target_files) == 0:
-            self.update()
+        if len(self.target_files) == 0:
             return
         if not all([os.path.exists(f) for f in self.target_files]):
             self.update()
             return
-        min_target_time = min(os.path.getmtime(f) for f in self.target_files)
-        max_dependency_time = max(os.path.getmtime(f) for f in dependency_files)
-        if min_target_time < max_dependency_time:
-            self.update()
+        if len(dependency_files) > 0:
+            min_target_time = min(os.path.getmtime(f) for f in self.target_files)
+            max_dependency_time = max(os.path.getmtime(f) for f in dependency_files)
+            if min_target_time < max_dependency_time:
+                self.update()
             return
 
     def __str__(self):
-        dependency_files = [d.target_files for d in self.dependencies]
-        return "targets: %s, dependencies: %s" % (self.target_files, str(dependency_files))
+        return "targets: %s, dependencies: %s" % (self.target_files, str([str(d) for d in self.dependencies]))
 
 
 class RootNode(Node):
@@ -58,7 +56,7 @@ class RootNode(Node):
         self.dependencies = []
         self.target_files = target_files
 
-    def update(self):
+    def make(self):
         for f in self.target_files:
             if not os.path.exists(f):
                 raise RuntimeError('root node target %s not exist' % f)
